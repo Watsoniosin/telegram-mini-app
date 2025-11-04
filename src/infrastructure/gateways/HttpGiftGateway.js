@@ -1,7 +1,7 @@
 // src/infrastructure/gateways/HttpGiftGateway.js
 export class HttpGiftGateway {
   constructor() {
-    // НАДІЙНИЙ БЕЗКОШТОВНИЙ ПРОКСІ
+    // НАДІЙНИЙ ПРОКСІ (ПРАЦЮЄ З УСІМА ФАЙЛАМИ)
     this.proxy = 'https://api.allorigins.win/raw?url=';
     this.baseUrl = 'https://api.changes.tg/original';
   }
@@ -9,7 +9,9 @@ export class HttpGiftGateway {
   async loadGiftAnimation(giftId) {
     const url = `${this.baseUrl}/${giftId}.json`;
     const response = await fetch(this.proxy + encodeURIComponent(url));
-    if (!response.ok) throw new Error(`Gift JSON not found: ${giftId}`);
+    if (!response.ok) {
+      throw new Error(`Gift JSON not found: ${giftId} (Status: ${response.status})`);
+    }
     return await response.json();
   }
 
