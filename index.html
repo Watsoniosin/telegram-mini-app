@@ -1,42 +1,3 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Мій Mini App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.9.6/lottie.min.js"></script>
-  <!-- ДОДАЄМО Lottie для анімацій -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.9.6/lottie.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
-    .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
-    h1 { color: #1c1e21; margin-bottom: 16px; }
-    .balance { font-size: 36px; font-weight: 700; color: #1da1f2; margin: 16px 0; }
-    button { background: #1da1f2; color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 16px; }
-    #gift-anim { width: 200px; height: 200px; margin: 20px auto; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Привіт, <span id="username">...</span>!</h1>
-    <div class="balance" id="balance">0.00 $</div>
-    <button id="refresh-btn">Оновити баланс</button>
-    <!-- ПРЕВ'Ю PNG -->
-<img id="gift-preview" 
-     src="" 
-     alt="Gift Preview" 
-     style="width:100%; border-radius:12px; margin:16px 0; display:none;" />
-
-<!-- АНІМАЦІЯ LOTTIE -->
-<div id="gift-anim" 
-     style="width:200px; height:200px; margin:20px auto;"></div>
-
-    <!-- ДОДАЄМО КОНТЕЙНЕР ДЛЯ АНІМАЦІЇ -->
-    <div id="gift-anim"></div>
-  </div>
-
 <script type="module">
   import { User } from './src/domain/User.js';
   import { GetBalanceUseCase } from './src/application/GetBalanceUseCase.js';
@@ -46,7 +7,8 @@
   const tg = window.Telegram.WebApp;
   tg.ready(); tg.expand();
 
-  const tgUser = tg.initDataUnsafe.user || { id: 999, first_name: 'Гість', username: 'guest' };
+  // ЗАХИСТ ВІД undefined
+  const tgUser = tg.initDataUnsafe?.user || { id: 999, first_name: 'Гість', username: 'guest' };
   const user = new User(tgUser.id, tgUser.first_name, tgUser.username);
   document.getElementById('username').textContent = user.getDisplayName();
 
@@ -55,25 +17,23 @@
   const useCase = new GetBalanceUseCase(balanceGateway);
 
   async function updateBalance() {
-    const balance = await useCase.execute(user.id);
-    document.getElementById('balance').textContent = `${balance.toFixed(2)} $`;
+    try {
+      const balance = await useCase.execute(user.id);
+      document.getElementById('balance').textContent = `${balance.toFixed(2)} $`;
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   document.getElementById('refresh-btn').onclick = updateBalance;
   tg.MainButton.setText('Оновити').onClick(updateBalance).show();
   updateBalance();
 
-  // === АНІМАЦІЯ GIFT ===
+  // === АНІМАЦІЯ GIFT (ТІЛЬКИ .tgs) ===
   const giftGateway = new HttpGiftGateway();
-  const GIFT_ID = 'AstralShard-21'; // ← ЗМІНИ НА СВІЙ
+  const GIFT_ID = 'AstralShard-21';
 
-  // Показуємо прев'ю
-  const previewImg = document.getElementById('gift-preview');
-  previewImg.src = giftGateway.loadGiftPreview(GIFT_ID);
-  previewImg.style.display = 'block';
-
-  // Завантажуємо анімацію
-  async function loadGiftAnimation() {
+  async function loadGift() {
     try {
       const animData = await giftGateway.loadGiftAnimation(GIFT_ID);
       lottie.loadAnimation({
@@ -84,12 +44,14 @@
         animationData: animData
       });
     } catch (error) {
-      document.getElementById('gift-anim').innerHTML = 
-        `<p style="color:red; text-align:center;">Помилка: ${error.message}</p>`;
+      console.error('Gift error:', error);
+      const container = document.getElementById('gift-anim');
+      if (container) {
+        container.innerHTML = '<p style="color:red; text-align:center;">Анімація недоступна</p>';
+      }
     }
   }
 
-  loadGiftAnimation();
+  // Запускаємо анімацію
+  loadGift();
 </script>
-</body>
-</html>

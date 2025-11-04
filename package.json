@@ -4,8 +4,8 @@
   "description": "",
   "main": "test.js",
   "scripts": {
-  "test": "node test.js"
-},
+    "test": "node test.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Watsoniosin/telegram-mini-app.git"
@@ -17,6 +17,8 @@
     "url": "https://github.com/Watsoniosin/telegram-mini-app/issues"
   },
   "homepage": "https://github.com/Watsoniosin/telegram-mini-app#readme",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "telegraf": "^4.16.3"
+  }
 }
-
