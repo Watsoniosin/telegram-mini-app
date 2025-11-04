@@ -46,7 +46,7 @@
   const tg = window.Telegram.WebApp;
   tg.ready(); tg.expand();
 
-  const tgUser = tg.initDataUnsafe.user;
+  const tgUser = tg.initDataUnsafe.user || { id: 999, first_name: 'Гість', username: 'guest' };
   const user = new User(tgUser.id, tgUser.first_name, tgUser.username);
   document.getElementById('username').textContent = user.getDisplayName();
 
