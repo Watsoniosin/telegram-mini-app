@@ -1,0 +1,22 @@
+{
+  "name": "telegram-mini-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "test.js",
+  "scripts": {
+  "test": "node test.js"
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Watsoniosin/telegram-mini-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Watsoniosin/telegram-mini-app/issues"
+  },
+  "homepage": "https://github.com/Watsoniosin/telegram-mini-app#readme",
+  "type": "module"
+}
+

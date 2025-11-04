@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Мій Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h1 { color: #1c1e21; margin-bottom: 16px; }
+    .balance {
+      font-size: 36px;
+      font-weight: 700;
+      color: #1da1f2;
+      margin: 16px 0;
+    }
+    button {
+      background: #1da1f2;
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Привіт, <span id="username">...</span>!</h1>
+    <div class="balance" id="balance">0.00 $</div>
+    <button id="refresh-btn">Оновити баланс</button>
+  </div>
+
+  <script type="module">
+    import { User } from './src/domain/User.js';
+    import { GetBalanceUseCase } from './src/application/GetBalanceUseCase.js';
+    import { MockBalanceGateway } from './src/infrastructure/gateways/MockBalanceGateway.js';
+
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const tgUser = tg.initDataUnsafe.user;
+    const user = new User(tgUser.id, tgUser.first_name, tgUser.username);
+
+    document.getElementById('username').textContent = user.getDisplayName();
+
+    const gateway = new MockBalanceGateway('777.77');
+    const useCase = new GetBalanceUseCase(gateway);
+
+    async function updateBalance() {
+      const balance = await useCase.execute(user.id);
+      document.getElementById('balance').textContent = `${balance.toFixed(2)} $`;
+    }
+
+    document.getElementById('refresh-btn').onclick = updateBalance;
+    tg.MainButton.setText('Оновити').onClick(updateBalance).show();
+
+    updateBalance();
+  </script>
+</body>
+</html>
