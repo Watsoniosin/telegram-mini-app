@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Мій Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.9.6/lottie.min.js"></script>
   <!-- ДОДАЄМО Lottie для анімацій -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.9.6/lottie.min.js"></script>
   <style>
@@ -22,55 +23,73 @@
     <h1>Привіт, <span id="username">...</span>!</h1>
     <div class="balance" id="balance">0.00 $</div>
     <button id="refresh-btn">Оновити баланс</button>
+    <!-- ПРЕВ'Ю PNG -->
+<img id="gift-preview" 
+     src="" 
+     alt="Gift Preview" 
+     style="width:100%; border-radius:12px; margin:16px 0; display:none;" />
+
+<!-- АНІМАЦІЯ LOTTIE -->
+<div id="gift-anim" 
+     style="width:200px; height:200px; margin:20px auto;"></div>
 
     <!-- ДОДАЄМО КОНТЕЙНЕР ДЛЯ АНІМАЦІЇ -->
     <div id="gift-anim"></div>
   </div>
 
-  <script type="module">
-    import { User } from './src/domain/User.js';
-    import { GetBalanceUseCase } from './src/application/GetBalanceUseCase.js';
-    import { HttpGiftGateway } from './src/infrastructure/gateways/HttpGiftGateway.js';
-    import { MockBalanceGateway } from './src/infrastructure/gateways/MockBalanceGateway.js';
+<script type="module">
+  import { User } from './src/domain/User.js';
+  import { GetBalanceUseCase } from './src/application/GetBalanceUseCase.js';
+  import { MockBalanceGateway } from './src/infrastructure/gateways/MockBalanceGateway.js';
+  import { HttpGiftGateway } from './src/infrastructure/gateways/HttpGiftGateway.js';
 
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+  const tg = window.Telegram.WebApp;
+  tg.ready(); tg.expand();
 
-    const tgUser = tg.initDataUnsafe.user;
-    const user = new User(tgUser.id, tgUser.first_name, tgUser.username);
-    document.getElementById('username').textContent = user.getDisplayName();
+  const tgUser = tg.initDataUnsafe.user;
+  const user = new User(tgUser.id, tgUser.first_name, tgUser.username);
+  document.getElementById('username').textContent = user.getDisplayName();
 
-    // === БАЛАНС (Mock) ===
-    const balanceGateway = new MockBalanceGateway('777.77');
-    const useCase = new GetBalanceUseCase(balanceGateway);
+  // === БАЛАНС ===
+  const balanceGateway = new MockBalanceGateway('777.77');
+  const useCase = new GetBalanceUseCase(balanceGateway);
 
-    async function updateBalance() {
-      const balance = await useCase.execute(user.id);
-      document.getElementById('balance').textContent = `${balance.toFixed(2)} $`;
+  async function updateBalance() {
+    const balance = await useCase.execute(user.id);
+    document.getElementById('balance').textContent = `${balance.toFixed(2)} $`;
+  }
+
+  document.getElementById('refresh-btn').onclick = updateBalance;
+  tg.MainButton.setText('Оновити').onClick(updateBalance).show();
+  updateBalance();
+
+  // === АНІМАЦІЯ GIFT ===
+  const giftGateway = new HttpGiftGateway();
+  const GIFT_ID = 'AstralShard-21'; // ← ЗМІНИ НА СВІЙ
+
+  // Показуємо прев'ю
+  const previewImg = document.getElementById('gift-preview');
+  previewImg.src = giftGateway.loadGiftPreview(GIFT_ID);
+  previewImg.style.display = 'block';
+
+  // Завантажуємо анімацію
+  async function loadGiftAnimation() {
+    try {
+      const animData = await giftGateway.loadGiftAnimation(GIFT_ID);
+      lottie.loadAnimation({
+        container: document.getElementById('gift-anim'),
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        animationData: animData
+      });
+    } catch (error) {
+      document.getElementById('gift-anim').innerHTML = 
+        `<p style="color:red; text-align:center;">Помилка: ${error.message}</p>`;
     }
-    document.getElementById('refresh-btn').onclick = updateBalance;
-    tg.MainButton.setText('Оновити').onClick(updateBalance).show();
-    updateBalance();
+  }
 
-    // === АНІМАЦІЯ GIFT (api.changes.tg) ===
-    async function loadGift() {
-      const giftGateway = new HttpGiftGateway();
-      const giftId = 'AstralShard-21'; // Зміни на свій
-      try {
-        const giftData = await giftGateway.getBalance(giftId);
-        lottie.loadAnimation({
-          container: document.getElementById('gift-anim'),
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          animationData: giftData
-        });
-      } catch (error) {
-        document.getElementById('gift-anim').innerHTML = '<p>Анімація не знайдена</p>';
-      }
-    }
-    loadGift();
-  </script>
+  loadGiftAnimation();
+</script>
 </body>
 </html>
