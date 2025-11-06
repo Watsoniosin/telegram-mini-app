@@ -1,0 +1,77 @@
+// main.js — ВЕСЬ ТВІЙ КОД
+function initTelegramWebApp() {
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+    return window.Telegram.WebApp;
+  } else {
+    console.warn('Telegram WebApp not found — using mock');
+    window.Telegram = {
+      WebApp: {
+        initData: 'mock_init_data',
+        initDataUnsafe: { user: { id: 999, first_name: 'Гість', username: 'guest' } },
+        ready: () => console.log('Mock WebApp ready'),
+        expand: () => console.log('Mock WebApp expand'),
+        MainButton: {
+          setText: (text) => { this.text = text; return this; },
+          onClick: (cb) => { this.clickHandler = cb; return this; },
+          show: () => console.log('MainButton shown'),
+          text: '',
+          clickHandler: null
+        }
+      }
+    };
+    return window.Telegram.WebApp;
+  }
+}
+
+const tg = initTelegramWebApp();
+const tgUser = tg.initDataUnsafe?.user || { id: 999, first_name: 'Гість', username: 'guest' };
+
+import { User } from './src/domain/User.js';
+import { GetBalanceUseCase } from './src/application/GetBalanceUseCase.js';
+import { MockBalanceGateway } from './src/infrastructure/gateways/MockBalanceGateway.js';
+import { HttpGiftGateway } from './src/infrastructure/gateways/HttpGiftGateway.js';
+
+const user = new User(tgUser.id, tgUser.first_name, tgUser.username);
+document.getElementById('username').textContent = user.getDisplayName();
+
+const balanceGateway = new MockBalanceGateway('777.77');
+const useCase = new GetBalanceUseCase(balanceGateway);
+
+async function updateBalance() {
+  try {
+    const balance = await useCase.execute(user.id);
+    document.getElementById('balance').textContent = `${balance.toFixed(2)} $`;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+document.getElementById('refresh-btn').onclick = updateBalance;
+tg.MainButton.setText('Оновити').onClick(updateBalance).show();
+updateBalance();
+
+const giftGateway = new HttpGiftGateway();
+const GIFT_ID = 'AstralShard-21';
+
+async function loadGift() {
+  try {
+    const animData = await giftGateway.loadGiftAnimation(GIFT_ID);
+    lottie.loadAnimation({
+      container: document.getElementById('gift-anim'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      animationData: animData
+    });
+  } catch (error) {
+    console.error('Gift error:', error);
+    const container = document.getElementById('gift-anim');
+    if (container) {
+      container.innerHTML = '<p style="color:red; text-align:center;">Анімація недоступна</p>';
+    }
+  }
+}
+
+loadGift();
